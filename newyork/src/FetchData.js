@@ -9,6 +9,8 @@ function FetchData() {
     age: "",
   });
   const [editData, setEditData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewData, setViewData] = useState(null);
 
   useEffect(() => {
     fetchDataArray();
@@ -16,7 +18,7 @@ function FetchData() {
 
   const fetchDataArray = () => {
     axios
-      .get("http://175.41.185.23:8080/demo/api/v1/customers")
+      .get("https://175.41.185.23:8443/demo/api/v1/customers")
       .then((res) => {
         setDataArray(res.data);
       })
@@ -32,7 +34,7 @@ function FetchData() {
 
   const addData = () => {
     axios
-      .post("http://175.41.185.23:8080/demo/api/v1/customers", formData)
+      .post("https://175.41.185.23:8443/demo/api/v1/customers", formData)
       .then((res) => {
         setDataArray([...dataArray, res.data]);
         setFormData({
@@ -55,7 +57,10 @@ function FetchData() {
 
   const updateData = () => {
     axios
-      .put(`http://175.41.185.23:8080/demo/api/v1/customers/${editData.id}`, formData)
+      .put(
+        `https://175.41.185.23:8443/demo/api/v1/customers/${editData.id}`,
+        formData
+      )
       .then((res) => {
         const updatedDataArray = dataArray.map((data) => {
           if (data.id === res.data.id) {
@@ -76,12 +81,16 @@ function FetchData() {
 
   const deleteData = (id) => {
     axios
-      .delete(`http://175.41.185.23:8080/demo/api/v1/customers/${id}`)
+      .delete(`https://175.41.185.23:8443/demo/api/v1/customers/${id}`)
       .then(() => {
         const filteredDataArray = dataArray.filter((data) => data.id !== id);
         setDataArray(filteredDataArray);
       })
       .catch((err) => console.log(err));
+  };
+
+  const viewDataFunc = (data) => {
+    setViewData(data);
   };
 
   return (
@@ -121,11 +130,25 @@ function FetchData() {
               className="form-control"
             />
           </div>
+          <div className="form-group">
+            <label>Search:</label>
+            <input
+              type="text"
+              name="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-control"
+            />
+          </div>
           <button type="submit" className="btn btn-primary">
             {editData ? "Update" : "Add"}
           </button>
           {editData && (
-            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditData(null)}>
+            <button
+              type="button"
+              className="btn btn-secondary ml-2"
+              onClick={() => setEditData(null)}
+            >
               Cancel
             </button>
           )}
@@ -142,27 +165,73 @@ function FetchData() {
             </tr>
           </thead>
           <tbody>
-            {dataArray.map((data) => (
-              <tr key={data.id}>
-                <td>{data.id}</td>
-                <td>{data.name}</td>
-                <td>{data.email}</td>
-                <td>{data.age}</td>
-                <td>
-                  <button type="button" className="btn btn-primary mr-2" onClick={() => editDataFunc(data)}>
-                    Edit
-                  </button>
-                  <button type="button" className="btn btn-danger" onClick={() => deleteData(data.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {dataArray
+              .filter((data) =>
+                data.name.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((data) => (
+                <tr key={data.id}>
+                  <td>{data.id}</td>
+                  <td>{data.name}</td>
+                  <td>{data.email}</td>
+                  <td>{data.age}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-primary mr-2"
+                      onClick={() => editDataFunc(data)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-info mr-2"
+                      onClick={() => viewDataFunc(data)}
+                    >
+                      View Details
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => deleteData(data.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
+        {/* View data modal */}
+        {viewData && (
+          <div className="modal" tabIndex="-1" role="dialog">
+            <div className="modal-dialog" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Customer Details</h5>
+                  <button
+                    type="button"
+                    className="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                    onClick={() => setViewData(null)}
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p>ID: {viewData.id}</p>
+                  <p>Name: {viewData.name}</p>
+                  <p>Email: {viewData.email}</p>
+                  <p>Age: {viewData.age}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default FetchData; 
+export default FetchData;
